@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A premium hybrid 2D side-scrolling portfolio website using Canvas and standard HTML elements.">
+    <title>Retro 2D Side-Scrolling Portfolio</title>
+    <!-- Google Fonts: Press Start 2P for Retro Vibe, Outfit for Professional Sans-Serif Text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Bottom Canvas Layer (Player, Grid, Sky, Parallax) -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Top Layer: Transparent Horizontal Scrollable HTML World -->
+        <div id="overlay-viewport">
+            <div id="scrollable-world">
+                <!-- Starting area spacing -->
+                <div class="start-buffer"></div>
+
+                <!-- 1. INTRO ZONE -->
+                <section class="scroll-section" id="section-intro">
+                    <div class="card intro-card retro-border glass-effect">
+                        <div class="card-header">
+                            <span class="status-tag pulse-green">ONLINE</span>
+                            <h1 class="pixel-font font-pink">&lt; INTRO &gt;</h1>
+                        </div>
+                        <div class="card-body">
+                            <div class="intro-grid">
+                                <div class="intro-bio">
+                                    <h2 class="pixel-font font-cyan">VICKY KUMAR</h2>
+                                    <p class="subtitle">Creative Full-Stack Engineer & Interactive Developer</p>
+                                    <p class="desc">
+                                        I build immersive web experiences by merging game mechanics with clean, high-performance web architecture. I specialize in turning complex codebases into beautifully interactive digital interfaces.
+                                    </p>
+                                    <div class="bio-meta">
+                                        <div class="meta-item"><span class="meta-label">HP:</span> 100/100</div>
+                                        <div class="meta-item"><span class="meta-label">LEVEL:</span> 24</div>
+                                        <div class="meta-item"><span class="meta-label">CLASS:</span> Developer</div>
+                                    </div>
+                                </div>
+                                <div class="intro-avatar-box">
+                                    <div class="retro-avatar">👾</div>
+                                    <p class="avatar-label pixel-font">PLAYER_1</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. SKILLS ZONE (Floating blocks at various heights) -->
+                <section class="scroll-section" id="section-skills">
+                    <!-- Floating Block 1: Frontend (Left & High) -->
+                    <div class="card skill-block block-high glass-effect neon-cyan-border floating-anim-1">
+                        <div class="card-header">
+                            <h2 class="pixel-font font-cyan">FRONTEND</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="skill-item">
+                                <span class="skill-name">React / Next.js</span>
+                                <div class="progress-bar"><div class="fill fill-cyan" style="width: 95%;"></div></div>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-name">JavaScript / TS</span>
+                                <div class="progress-bar"><div class="fill fill-cyan" style="width: 90%;"></div></div>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-name">HTML5 Canvas / CSS3</span>
+                                <div class="progress-bar"><div class="fill fill-cyan" style="width: 95%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating Block 2: Backend (Middle & Low) -->
+                    <div class="card skill-block block-low glass-effect neon-pink-border floating-anim-2">
+                        <div class="card-header">
+                            <h2 class="pixel-font font-pink">BACKEND</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="skill-item">
+                                <span class="skill-name">Node.js / Express</span>
+                                <div class="progress-bar"><div class="fill fill-pink" style="width: 85%;"></div></div>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-name">Python / Django</span>
+                                <div class="progress-bar"><div class="fill fill-pink" style="width: 80%;"></div></div>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-name">SQL & NoSQL Databases</span>
+                                <div class="progress-bar"><div class="fill fill-pink" style="width: 85%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating Block 3: Dev Tools (Right & High) -->
+                    <div class="card skill-block block-high glass-effect neon-purple-border floating-anim-3">
+                        <div class="card-header">
+                            <h2 class="pixel-font font-purple">TOOLS</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="skill-item">
+                                <span class="skill-name">Git & GitHub Actions</span>
+                                <div class="progress-bar"><div class="fill fill-purple" style="width: 90%;"></div></div>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-name">Docker / AWS</span>
+                                <div class="progress-bar"><div class="fill fill-purple" style="width: 75%;"></div></div>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-name">Vite / Webpack / WebGL</span>
+                                <div class="progress-bar"><div class="fill fill-purple" style="width: 85%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. EXPERIENCE ZONE (Horizontal timeline connector) -->
+                <section class="scroll-section" id="section-experience">
+                    <div class="timeline-container">
+                        <!-- Horizontal connector line -->
+                        <div class="timeline-line"></div>
+
+                        <!-- Timeline Node 1 -->
+                        <div class="timeline-node">
+                            <div class="timeline-dot dot-cyan"></div>
+                            <div class="card timeline-card glass-effect neon-cyan-border">
+                                <div class="node-time pixel-font font-cyan">2024 - PRESENT</div>
+                                <h3>Senior Interactive Developer</h3>
+                                <p class="company">RetroPixel Studios</p>
+                                <ul class="details">
+                                    <li>Built robust, cross-browser 2D physics and animation modules.</li>
+                                    <li>Implemented dynamic rendering systems resulting in 40% performance gains.</li>
+                                    <li>Collaborated with design teams to craft award-winning gaming UI.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Node 2 -->
+                        <div class="timeline-node node-offset">
+                            <div class="timeline-dot dot-pink"></div>
+                            <div class="card timeline-card glass-effect neon-pink-border">
+                                <div class="node-time pixel-font font-pink">2022 - 2024</div>
+                                <h3>Frontend Software Engineer</h3>
+                                <p class="company">ByteForge Systems</p>
+                                <ul class="details">
+                                    <li>Developed responsive web dashboards featuring WebSockets data streams.</li>
+                                    <li>Led React migration efforts, improving page load metrics by 35%.</li>
+                                    <li>Enforced unit testing guidelines and mentored engineering staff.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Node 3 -->
+                        <div class="timeline-node">
+                            <div class="timeline-dot dot-purple"></div>
+                            <div class="card timeline-card glass-effect neon-purple-border">
+                                <div class="node-time pixel-font font-purple">2020 - 2022</div>
+                                <h3>Associate Software Engineer</h3>
+                                <p class="company">TechGrid Solutions</p>
+                                <ul class="details">
+                                    <li>Assisted in building REST APIs using Node.js and PostgreSQL database.</li>
+                                    <li>Maintained frontend layouts and resolved accessibility audit issues.</li>
+                                    <li>Created automation test suites using Cypress and Jest.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. VICTORY ZONE -->
+                <section class="scroll-section" id="section-outro">
+                    <div class="card outro-card retro-border glass-effect text-center">
+                        <div class="card-header justify-center">
+                            <h1 class="pixel-font font-green blink">&lt; VICTORY &gt;</h1>
+                        </div>
+                        <div class="card-body">
+                            <h2 class="sub-lead">Level Complete! Thank you for playing.</h2>
+                            <p class="desc">Interested in co-op mode? Let's connect and build something awesome together.</p>
+                            
+                            <div class="outro-links">
+                                <a href="mailto:vicky@example.com" class="retro-link link-cyan">📧 Email</a>
+                                <a href="https://github.com" target="_blank" class="retro-link link-pink">🐙 GitHub</a>
+                                <a href="https://linkedin.com" target="_blank" class="retro-link link-purple">💼 LinkedIn</a>
+                            </div>
+
+                            <button id="replay-btn" class="pixel-btn">REPLAY LEVEL</button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="end-buffer"></div>
+            </div>
+        </div>
+
+        <!-- Static GUI Overlay (Start Screen, Instructions, HUD) -->
+        <div id="gui-overlay">
+            <!-- HUD -->
+            <div id="hud" class="hidden">
+                <div class="hud-box">
+                    <span class="hud-label font-pink">WORLD:</span>
+                    <span id="hud-zone" class="hud-value font-cyan">INTRO</span>
+                </div>
+                <div class="hud-box">
+                    <span class="hud-label font-pink">PROGRESS:</span>
+                    <span id="hud-progress" class="hud-value font-cyan">0%</span>
+                </div>
+            </div>
+
+            <!-- Start Screen Overlay -->
+            <div id="start-screen" class="glass-effect">
+                <div class="start-content retro-border">
+                    <h1 class="pixel-font font-pink blink">PRESS START</h1>
+                    <p class="game-subtitle font-cyan pixel-font">HYBRID PORTFOLIO WEB GAME</p>
+                    
+                    <div class="controls-info">
+                        <div class="info-row">
+                            <span class="btn-cap pixel-font">SCROLL</span>
+                            <span class="info-text">Scroll DOWN/UP to move Right/Left</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="btn-cap pixel-font">ARROWS</span>
+                            <span class="info-text">Use Left / Right Arrows to move</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="btn-cap long-cap pixel-font">SPACEBAR</span>
+                            <span class="info-text">Press Spacebar to Jump</span>
+                        </div>
+                    </div>
+                    
+                    <button id="start-game-btn" class="start-btn pixel-font">START GAME</button>
+                </div>
+            </div>
+
+            <!-- Interactive Helper Controls -->
+            <button id="sound-btn" class="gui-btn">🔊</button>
+        </div>
+    </div>
+
+    <!-- Phaser.js CDN import -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="game.js?v=5"></script>
+</body>
+</html>

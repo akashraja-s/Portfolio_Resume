@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Akash Raja — Interactive Resume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* Google Fonts: Outfit for clean legibility, Press Start 2P for arcade/HUD accents, Share Tech Mono for readouts */
+:root {
+    /* ---- Color tokens ---- */
+    --bg-color: #0a0b12;
+    --surface: rgba(13, 15, 24, 0.78);
+    --surface-strong: rgba(15, 17, 27, 0.92);
+    --line: rgba(255, 255, 255, 0.09);
+    --line-soft: rgba(255, 255, 255, 0.05);
+
+    --cyan: #00e5ff;
+    --pink: #ff2e88;
+    --purple: #9b6bff;
+    --green: #3dffa0;
+    --amber: #ffc773;
+
+    --ink: #f3f4f7;
+    --ink-dim: #9298ab;
+    --ink-faint: #5c6274;
+
+    --glow-cyan: 0 0 26px rgba(0, 229, 255, 0.24);
+    --glow-pink: 0 0 26px rgba(255, 46, 136, 0.24);
+    --glow-purple: 0 0 26px rgba(155, 107, 255, 0.24);
+    --glow-green: 0 0 18px rgba(61, 255, 160, 0.32);
+
+    /* ---- Spacing scale (4px base) ---- */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+    --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+
+    /* ---- Type scale ---- */
+    --text-2xs: 0.6rem;
+    --text-xs: 0.68rem;
+    --text-sm: 0.82rem;
+    --text-base: 0.95rem;
+    --text-md: 1.05rem;
+    --text-lg: 1.3rem;
+    --text-xl: 1.7rem;
+
+    --radius-lg: 16px;
+    --radius-md: 10px;
+
+    --font-pixel: 'Press Start 2P', monospace;
+    --font-sans: 'Outfit', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+    --ease: cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+
+/* Global Reset */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, html {
+    width: 100%; height: 100%; overflow: hidden;
+    background-color: var(--bg-color);
+    font-family: var(--font-sans);
+    color: var(--ink);
+    user-select: none;
+}
+
+/* 1. ARCHITECTURE LAYOUT */
+#app-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+#gameCanvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 1; display: block;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    background: #0f101a; cursor: default;
+}
+
+#overlay-viewport {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 2; overflow: hidden; pointer-events: none;
+}
+
+#scrollable-world {
+    position: absolute; top: 0; left: 0; height: 100%;
+    display: flex; flex-direction: row; align-items: center;
+    transform: translateX(0px); will-change: transform;
+}
+
+.start-buffer { min-width: 46vw; height: 100%; }
+.end-buffer { min-width: 70vw; height: 100%; }
+
+.scroll-section {
+    display: flex; align-items: center; height: 100%;
+    padding: 0 var(--sp-9);
+    position: relative;
+}
+
+/* 2. CARD SYSTEM — two deliberate tiers so the page has a clear focal
+   hierarchy instead of every panel competing for attention:
+   .card--hero  = the two bookend moments (intro / outro)
+   .card--panel = supporting content (skills, timeline) — quieter border,
+                  a single accent bar instead of an all-round glow */
+.card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-6);
+    color: var(--ink);
+    pointer-events: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
+}
+.card:hover { transform: translateY(-5px); }
+
+.card::before {
+    content: "";
+    position: absolute; top: 0; left: var(--radius-lg); right: var(--radius-lg);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    pointer-events: none;
+}
+
+.card--hero { border-width: 2px; }
+.card--hero.accent-pink {
+    border-color: rgba(255, 46, 136, 0.55);
+    box-shadow: var(--glow-pink), 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 30px rgba(255, 46, 136, 0.05);
+}
+.card--hero.accent-cyan {
+    border-color: rgba(0, 229, 255, 0.55);
+    box-shadow: var(--glow-cyan), 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 30px rgba(0, 229, 255, 0.05);
+}
+
+.card--panel::after {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.card--panel.accent-cyan::after { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+.card--panel.accent-pink::after { background: var(--pink); box-shadow: 0 0 10px var(--pink); }
+.card--panel.accent-purple::after { background: var(--purple); box-shadow: 0 0 10px var(--purple); }
+
+.card--panel.accent-cyan:hover { border-color: rgba(0, 229, 255, 0.45); box-shadow: var(--glow-cyan), 0 20px 50px rgba(0, 0, 0, 0.5); }
+.card--panel.accent-pink:hover { border-color: rgba(255, 46, 136, 0.45); box-shadow: var(--glow-pink), 0 20px 50px rgba(0, 0, 0, 0.5); }
+.card--panel.accent-purple:hover { border-color: rgba(155, 107, 255, 0.45); box-shadow: var(--glow-purple), 0 20px 50px rgba(0, 0, 0, 0.5); }
+
+.pixel-font { font-family: var(--font-pixel); letter-spacing: 1px; }
+.mono-font { font-family: var(--font-mono); }
+.font-cyan { color: var(--cyan); text-shadow: 0 0 6px rgba(0, 229, 255, 0.35); }
+.font-pink { color: var(--pink); text-shadow: 0 0 6px rgba(255, 46, 136, 0.35); }
+.font-purple { color: var(--purple); text-shadow: 0 0 6px rgba(155, 107, 255, 0.35); }
+.font-green { color: var(--green); text-shadow: 0 0 6px rgba(61, 255, 160, 0.35); }
+
+.card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--line-soft);
+    padding-bottom: var(--sp-4); margin-bottom: var(--sp-5);
+}
+.card-header h1 { font-size: var(--text-md); margin: 0; }
+.card-header h2 { font-size: var(--text-base); margin: 0; letter-spacing: 1px; }
+
+.status-tag {
+    font-size: var(--text-xs); font-family: var(--font-pixel);
+    padding: 5px 10px; border-radius: 4px;
+    background: rgba(61, 255, 160, 0.12);
+    border: 1px solid var(--green); color: var(--green);
+    white-space: nowrap;
+}
+.pulse-green { animation: greenBlink 2s infinite ease-in-out; }
+@keyframes greenBlink {
+    0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--green); }
+    50% { opacity: 0.5; box-shadow: 0 0 1px var(--green); }
+}
+
+/* 3. SECTION SPECIFIC DESIGNS */
+
+/* --- Intro --- */
+#section-intro { min-width: 900px; }
+.intro-card { width: clamp(600px, 58vw, 780px); }
+.intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 176px;
+    gap: var(--sp-7);
+    align-items: stretch;
+}
+.intro-bio { display: flex; flex-direction: column; }
+.intro-bio h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: 4px; }
+.intro-bio .subtitle {
+    color: var(--cyan); font-size: var(--text-base); font-weight: 500;
+    margin-bottom: var(--sp-4);
+}
+.intro-bio .desc {
+    color: var(--ink-dim); font-size: var(--text-base); line-height: 1.65;
+    margin-bottom: var(--sp-5);
+}
+
+/* Stat strip — a small, legible "character sheet" row instead of loose
+   wrapped tags; four equal columns divided by hairlines */
+.stat-strip {
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md);
+}
+.stat {
+    padding: var(--sp-3) var(--sp-3);
+    border-left: 1px solid var(--line-soft);
+    display: flex; flex-direction: column; gap: 6px;
+}
+.stat:first-child { border-left: none; }
+.stat-label {
+    font-family: var(--font-pixel); font-size: 0.55rem;
+    color: var(--pink); letter-spacing: 0.5px;
+}
+.stat-value {
+    font-family: var(--font-mono); font-size: var(--text-sm);
+    color: var(--ink); font-weight: bold; letter-spacing: 0.3px;
+}
+
+.intro-avatar-box {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line-soft);
+    padding: var(--sp-4);
+    position: relative;
+}
+.intro-avatar-box::before {
+    content: "";
+    position: absolute; inset: 10px;
+    border: 1px dashed rgba(0, 229, 255, 0.25);
+    border-radius: 8px;
+}
+.retro-avatar { font-size: 3.6rem; animation: avatarFloat 3s infinite ease-in-out; }
+.avatar-label {
+    font-family: var(--font-pixel); font-size: 0.55rem;
+    color: var(--ink-faint); margin-top: var(--sp-4); letter-spacing: 1px;
+}
+@keyframes avatarFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* --- Skills --- */
+#section-skills {
+    min-width: 1280px;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-8);
+}
+.skill-block { width: 320px; }
+.skill-block .card-header h2 { font-size: var(--text-base); }
+
+/* Symmetric offsets (equal magnitude, alternating direction) read as a
+   deliberate wave rather than an accident — the previous -80 / +60 pairing
+   didn't mirror and looked unbalanced. */
+.wave-up { transform: translateY(-38px); }
+.wave-up:hover { transform: translateY(-46px); }
+.wave-down { transform: translateY(38px); }
+.wave-down:hover { transform: translateY(30px); }
+
+.floating-anim-1 { animation: float1 4s infinite ease-in-out; }
+.floating-anim-2 { animation: float2 4.5s infinite ease-in-out; }
+.floating-anim-3 { animation: float3 3.8s infinite ease-in-out; }
+@keyframes float1 { 0%, 100% { margin-top: 0px; } 50% { margin-top: -12px; } }
+@keyframes float2 { 0%, 100% { margin-top: 0px; } 50% { margin-top: 12px; } }
+@keyframes float3 { 0%, 100% { margin-top: 0px; } 50% { margin-top: -10px; } }
+
+.skill-item { margin-bottom: var(--sp-4); }
+.skill-item:last-child { margin-bottom: 0; }
+.skill-name { display: block; font-size: var(--text-sm); font-weight: 500; margin-bottom: 8px; color: var(--ink); }
+.progress-bar { width: 100%; height: 7px; background: rgba(0, 0, 0, 0.4); border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; width: 0; border-radius: 4px; transition: width 1.5s cubic-bezier(0.1, 1, 0.1, 1); }
+.fill-cyan { background: linear-gradient(90deg, #0088ff, var(--cyan)); box-shadow: 0 0 8px var(--cyan); }
+.fill-pink { background: linear-gradient(90deg, #b30059, var(--pink)); box-shadow: 0 0 8px var(--pink); }
+.fill-purple { background: linear-gradient(90deg, #6200b3, var(--purple)); box-shadow: 0 0 8px var(--purple); }
+
+/* --- Experience: robust dot-anchored timeline ---
+   Each node is a fixed-height column; the dot sits at the true vertical
+   centre of every node (== the shared line), and each card is offset from
+   the dot by one fixed "stem" length. This keeps every dot pinned exactly
+   on the line and every card an equal distance from it, however much
+   copy a given entry has — the old version anchored cards with a magic
+   padding-top that only lined up by coincidence. */
+#section-experience { min-width: 1900px; }
+.timeline-container {
+    position: relative;
+    height: 480px;
+    display: flex;
+    align-items: stretch;
+}
+.timeline-line {
+    position: absolute; left: 0; right: 0; top: 50%; height: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--pink), var(--purple));
+    box-shadow: 0 0 10px rgba(155, 107, 255, 0.4);
+    z-index: 1;
+}
+.timeline-node {
+    position: relative;
+    flex: 0 0 320px;
+    height: 100%;
+    margin-right: 96px;
+}
+.timeline-node:last-child { margin-right: 0; }
+
+.timeline-dot {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid var(--bg-color);
+    z-index: 3;
+}
+.dot-cyan { background: var(--cyan); box-shadow: var(--glow-cyan); }
+.dot-pink { background: var(--pink); box-shadow: var(--glow-pink); }
+.dot-purple { background: var(--purple); box-shadow: var(--glow-purple); }
+
+.timeline-stem {
+    position: absolute; left: 50%; width: 2px; height: 38px;
+    transform: translateX(-50%);
+    z-index: 2;
+    opacity: 0.7;
+}
+.stem-cyan { background: linear-gradient(180deg, var(--cyan), transparent); }
+.stem-pink { background: linear-gradient(180deg, var(--pink), transparent); }
+.stem-purple { background: linear-gradient(180deg, var(--purple), transparent); }
+.node-up .timeline-stem { bottom: 50%; background-image: none; }
+.node-up .stem-cyan { background: linear-gradient(0deg, var(--cyan), transparent); }
+.node-up .stem-pink { background: linear-gradient(0deg, var(--pink), transparent); }
+.node-up .stem-purple { background: linear-gradient(0deg, var(--purple), transparent); }
+.node-down .timeline-stem { top: 50%; }
+
+.timeline-card { position: absolute; left: 0; width: 100%; }
+.node-down .timeline-card { top: calc(50% + 38px); }
+.node-up .timeline-card { bottom: calc(50% + 38px); }
+
+.node-time {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs); font-weight: bold; letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.timeline-card h3 { font-size: var(--text-md); font-weight: 600; color: var(--ink); line-height: 1.3; }
+.company { color: var(--cyan); font-size: var(--text-sm); font-weight: 500; margin: 6px 0 var(--sp-4); }
+.details { list-style: none; }
+.details li {
+    font-size: var(--text-sm); color: var(--ink-dim);
+    position: relative; padding-left: 16px; margin-bottom: 7px; line-height: 1.45;
+}
+.details li::before {
+    content: "▶"; position: absolute; left: 0; top: 3px;
+    font-size: 0.55rem; color: var(--purple);
+}
+.details li:last-child { margin-bottom: 0; }
+
+/* --- Outro --- */
+#section-outro { min-width: 780px; }
+.outro-card { width: clamp(440px, 42vw, 560px); }
+.sub-lead { font-size: var(--text-md); color: var(--cyan); margin-bottom: var(--sp-2); font-weight: 500; }
+.outro-card .desc { color: var(--ink-dim); font-size: var(--text-base); line-height: 1.6; margin-bottom: var(--sp-6); }
+
+.outro-links { display: flex; justify-content: center; gap: var(--sp-3); margin-bottom: var(--sp-6); }
+.retro-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    color: var(--ink); text-decoration: none;
+    font-weight: 500; font-size: var(--text-sm);
+    transition: all 0.2s ease;
+}
+.retro-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+.link-cyan:hover { background: var(--cyan); color: var(--bg-color); border-color: var(--cyan); box-shadow: var(--glow-cyan); }
+.link-pink:hover { background: var(--pink); color: var(--ink); border-color: var(--pink); box-shadow: var(--glow-pink); }
+.link-purple:hover { background: var(--purple); color: var(--ink); border-color: var(--purple); box-shadow: var(--glow-purple); }
+
+.pixel-btn {
+    font-family: var(--font-pixel); font-size: var(--text-sm);
+    background: var(--green); color: #051402; border: none;
+    padding: var(--sp-4) var(--sp-6); border-radius: var(--radius-md);
+    cursor: pointer; box-shadow: var(--glow-green);
+    transition: all 0.12s ease;
+}
+.pixel-btn:hover { background: #5cff3c; box-shadow: 0 0 18px var(--green); transform: scale(1.03); }
+
+/* 4. STATIC HUD AND OVERLAYS */
+#gui-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 10; pointer-events: none;
+}
+
+#hud {
+    position: absolute; top: var(--sp-5); left: var(--sp-5); right: var(--sp-5);
+    display: flex; justify-content: space-between; pointer-events: auto;
+}
+.hud-box {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 10px 18px;
+    display: flex; align-items: baseline; gap: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+}
+.hud-label {
+    font-family: var(--font-pixel); font-size: var(--text-xs); color: var(--ink-dim);
+}
+.hud-value {
+    font-family: var(--font-mono); font-weight: bold; font-size: var(--text-base);
+    letter-spacing: 1px; color: var(--ink);
+}
+
+/* Start Screen Cover */
+#start-screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: center;
+    z-index: 100; pointer-events: auto;
+    background: rgba(8, 9, 15, 0.9);
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.start-content {
+    background: var(--surface-strong);
+    border: 2px solid var(--pink);
+    box-shadow: var(--glow-pink);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-8) var(--sp-7);
+    text-align: center;
+    max-width: 560px; width: 90%;
+}
+.start-content h1 { font-size: 1.55rem; margin-bottom: var(--sp-2); }
+.game-subtitle { font-size: var(--text-xs); margin-bottom: var(--sp-7); color: var(--cyan); }
+
+.controls-info {
+    display: flex; flex-direction: column; gap: var(--sp-4);
+    text-align: left;
+    background: rgba(0, 0, 0, 0.32);
+    padding: var(--sp-5); border-radius: var(--radius-md);
+    border: 1px solid var(--line-soft);
+    margin-bottom: var(--sp-7);
+}
+.info-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-base); }
+.btn-cap {
+    display: inline-flex; justify-content: center; align-items: center;
+    background: #171a28; border: 2px solid #2f344d; border-bottom-width: 4px;
+    border-radius: 4px; font-size: var(--text-xs);
+    padding: 6px 8px; min-width: 78px;
+    color: var(--cyan);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+.btn-cap.long-cap { min-width: 96px; color: var(--pink); }
+.info-text { color: var(--ink-dim); }
+
+.start-btn {
+    width: 100%; padding: var(--sp-4);
+    font-size: var(--text-md);
+    font-family: var(--font-sans); font-weight: 600;
+    background: var(--pink); color: white; border: none;
+    border-radius: var(--radius-md); cursor: pointer;
+    box-shadow: var(--glow-pink), 0 4px 0 #b30059;
+    transition: all 0.1s ease;
+}
+.start-btn:hover { background: #ff2a93; transform: translateY(-2px); box-shadow: var(--glow-pink), 0 6px 0 #b30059; }
+.start-btn:active { transform: translateY(2px); box-shadow: var(--glow-pink), 0 1px 0 #b30059; }
+
+/* Control Buttons */
+.gui-btn {
+    position: absolute; bottom: var(--sp-5); right: var(--sp-5);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--cyan);
+    box-shadow: var(--glow-cyan); color: white; cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 1.15rem; pointer-events: auto; transition: all 0.2s ease;
+}
+.gui-btn:hover { background: var(--cyan); color: var(--bg-color); transform: scale(1.1); }
+
+/* Utilities */
+.hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; transition: opacity 0.4s ease, visibility 0.4s ease; }
+.blink { animation: blinkText 1.5s infinite; }
+.text-center { text-align: center; }
+.justify-center { justify-content: center; }
+@keyframes blinkText { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* 5. ACCESSIBILITY & MOTION */
+a:focus-visible, button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+    .retro-avatar, .wave-up, .wave-down, .floating-anim-1, .floating-anim-2, .floating-anim-3, .blink, .pulse-green {
+        animation: none !important;
+    }
+}
+
+/* 6. GAME UI ELEMENTS */
+#toast-container {
+    position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
+    z-index: 20; display: flex; flex-direction: column; gap: 8px; align-items: center;
+    pointer-events: none;
+}
+.toast-xp {
+    background: var(--surface); border: 1px solid var(--green); box-shadow: var(--glow-green);
+    color: var(--green); font-family: var(--font-pixel); font-size: var(--text-xs);
+    padding: 10px 16px; border-radius: var(--radius-md);
+    opacity: 0; transform: translateY(-10px);
+    transition: opacity 0.4s ease, transform 0.4s ease; white-space: nowrap;
+}
+.toast-xp.show { opacity: 1; transform: translateY(0); }
+
+#scroll-hint {
+    position: absolute; bottom: 92px; left: 22%;
+    font-size: var(--text-xs); color: var(--cyan); text-shadow: 0 0 6px var(--cyan);
+    opacity: 0; transition: opacity 0.5s ease; pointer-events: none; white-space: nowrap;
+}
+#scroll-hint.show { opacity: 1; }
+
+#mobile-controls { display: none; position: absolute; bottom: var(--sp-5); left: var(--sp-5); gap: 14px; align-items: center; }
+#mobile-controls.active { display: flex; }
+.touch-btn {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--purple); box-shadow: var(--glow-purple);
+    color: var(--ink); font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: auto; -webkit-tap-highlight-color: transparent;
+}
+#touch-jump { border-color: var(--pink); box-shadow: var(--glow-pink); margin-left: 16px; }
+
+/* 7. ATMOSPHERE GRAIN */
+#noise-overlay {
+    position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    opacity: 0.035; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Adjustments for shorter viewports */
+@media (max-height: 700px) {
+    .scroll-section { padding: 0 var(--sp-7); }
+    .card { padding: var(--sp-5); }
+    .wave-up { transform: translateY(-18px); }
+    .wave-up:hover { transform: translateY(-24px); }
+    .wave-down { transform: translateY(18px); }
+    .wave-down:hover { transform: translateY(12px); }
+    .timeline-container { height: 400px; }
+    .timeline-stem { height: 26px; }
+    .node-down .timeline-card { top: calc(50% + 26px); }
+    .node-up .timeline-card { bottom: calc(50% + 26px); }
+}
+</style>
+</head>
+<body>
+<div id="app-container">
+
+    <canvas id="gameCanvas" aria-hidden="true"></canvas>
+
+    <div id="overlay-viewport">
+        <div id="scrollable-world">
+            <div class="start-buffer"></div>
+
+            <div class="scroll-section" id="section-intro" data-zone="INTRO">
+                <div class="card card--hero accent-pink intro-card">
+                    <div class="card-header">
+                        <h1 class="pixel-font font-pink">AKASH RAJA</h1>
+                        <span class="status-tag pulse-green">● ONLINE</span>
+                    </div>
+                    <div class="intro-grid">
+                        <div class="intro-bio">
+                            <h2>Full-Stack Developer</h2>
+                            <div class="subtitle">&amp; Creative Developer</div>
+                            <p class="desc">Code. Create. Evolve. I build fast, responsive web applications and intelligent software that blend design with functionality. Currently exploring Full-Stack Development, Artificial Intelligence, and building projects that turn ideas into reality.</p>
+                            <div class="stat-strip">
+                                <div class="stat"><span class="stat-label">LVL</span><span class="stat-value">10</span></div>
+                                <div class="stat"><span class="stat-label">CLASS</span><span class="stat-value">Full-Stack</span></div>
+                                <div class="stat"><span class="stat-label">LOC</span><span class="stat-value">Remote</span></div>
+                                <div class="stat"><span class="stat-label">STATUS</span><span class="stat-value">Open to Work</span></div>
+                            </div>
+                        </div>
+                        <div class="intro-avatar-box">
+                            <div class="retro-avatar">🧑‍💻</div>
+                            <div class="avatar-label">PLAYER 001</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroll-section" id="section-skills" data-zone="SKILLS">
+                <div class="card card--panel accent-cyan skill-block floating-anim-1 wave-up">
+                    <div class="card-header"><h2 class="pixel-font font-cyan">Frontend</h2></div>
+                    <div class="skill-item"><span class="skill-name">React</span><div class="progress-bar"><div class="fill fill-cyan" data-value="92"></div></div></div>
+                    <div class="skill-item"><span class="skill-name">Java</span><div class="progress-bar"><div class="fill fill-cyan" data-value="88"></div></div></div>
+                    <div class="skill-item"><span class="skill-name">Responsive Design</span><div class="progress-bar"><div class="fill fill-cyan" data-value="85"></div></div></div>
+                </div>
+                <div class="card card--panel accent-pink skill-block floating-anim-2 wave-down">
+                    <div class="card-header"><h2 class="pixel-font font-pink">Backend</h2></div>
+                    <div class="skill-item"><span class="skill-name">Node.js</span><div class="progress-bar"><div class="fill fill-pink" data-value="90"></div></div></div>
+                    <div class="skill-item"><span class="skill-name">Python</span><div class="progress-bar"><div class="fill fill-pink" data-value="80"></div></div></div>
+                    <div class="skill-item"><span class="skill-name">PostgreSQL</span><div class="progress-bar"><div class="fill fill-pink" data-value="78"></div></div></div>
+                </div>
+                <div class="card card--panel accent-purple skill-block floating-anim-3 wave-up">
+                    <div class="card-header"><h2 class="pixel-font font-purple">Tools &amp; Cloud</h2></div>
+                    <div class="skill-item"><span class="skill-name">Docker</span><div class="progress-bar"><div class="fill fill-purple" data-value="82"></div></div></div>
+                    <div class="skill-item"><span class="skill-name">AWS</span><div class="progress-bar"><div class="fill fill-purple" data-value="75"></div></div></div>
+                    <div class="skill-item"><span class="skill-name">Git / CI-CD</span><div class="progress-bar"><div class="fill fill-purple" data-value="88"></div></div></div>
+                </div>
+            </div>
+
+            <div class="scroll-section" id="section-experience" data-zone="EXPERIENCE">
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+
+                    <div class="timeline-node node-down">
+                        <div class="timeline-stem stem-pink"></div>
+                        <div class="timeline-dot dot-pink"></div>
+                        <div class="card card--panel accent-pink timeline-card">
+                            <div class="node-time font-pink">2025 — PRESENT</div>
+                            <h3>B.Tech Artificial Intelligence &amp; Data Science</h3>
+                            <div class="company">Panimalar Engineering College</div>
+                            <ul class="details">
+                                <li>Maintaining an 8.8 CGPA while specializing in AI &amp; Data Science.</li>
+                                <li>Actively preparing for Software Engineering and Full-Stack Developer placements.</li>
+                                <li>Strengthening problem-solving skills through Java, DSA, and aptitude practice.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-node node-up">
+                        <div class="timeline-stem stem-cyan"></div>
+                        <div class="timeline-dot dot-cyan"></div>
+                        <div class="card card--panel accent-cyan timeline-card">
+                            <div class="node-time font-cyan">2025</div>
+                            <h3>Java Full-Stack Training</h3>
+                            <div class="company">QSpiders</div>
+                            <ul class="details">
+                                <li>Completed 200+ hours of Java, SQL, and Web Development training.</li>
+                                <li>Built multiple Java applications and database-driven projects.</li>
+                                <li>Learned Core Java, OOP, HTML, CSS, JavaScript, and SQL.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-node node-down">
+                        <div class="timeline-stem stem-purple"></div>
+                        <div class="timeline-dot dot-purple"></div>
+                        <div class="card card--panel accent-purple timeline-card">
+                            <div class="node-time font-purple">2025</div>
+                            <h3>Python Internship</h3>
+                            <div class="company">Regmi Solutions &amp; InternPe</div>
+                            <ul class="details">
+                                <li>Developed Python programs for automation and problem-solving.</li>
+                                <li>Worked on data processing and real-world programming tasks.</li>
+                                <li>Strengthened Python fundamentals and debugging skills.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-node node-up">
+                        <div class="timeline-stem stem-cyan"></div>
+                        <div class="timeline-dot dot-cyan"></div>
+                        <div class="card card--panel accent-cyan timeline-card">
+                            <div class="node-time font-cyan">2024 — PRESENT</div>
+                            <h3>Projects &amp; Certifications</h3>
+                            <div class="company">Personal Development</div>
+                            <ul class="details">
+                                <li>Developed a Full-Stack Music Web Application using Java, SQL, HTML, CSS, and JavaScript.</li>
+                                <li>Built responsive portfolio and web development projects using React.</li>
+                                <li>Earned certifications in Oracle Generative AI, Infosys AI, and FutureSkills Prime Data Science.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroll-section" id="section-outro" data-zone="CONTACT">
+                <div class="card card--hero accent-cyan outro-card text-center">
+                    <div class="card-header justify-center">
+                        <h1 class="pixel-font font-cyan">MISSION COMPLETE</h1>
+                    </div>
+                    <div class="sub-lead">Thanks for playing through my portfolio</div>
+                    <p class="desc">Always happy to talk shop, trade portfolio-game ideas, or hear about your next project.</p>
+                    <div class="outro-links">
+                        <a class="retro-link link-cyan" href="https://github.com/" target="_blank" rel="noopener">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.6 2.8 5.5 3.1 5.5 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
+                            GitHub
+                        </a>
+                        <a class="retro-link link-pink" href="https://linkedin.com/" target="_blank" rel="noopener">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8.5" r="1"/><path d="M8 11v6M12 17v-3.5c0-1.4 1-2.5 2.3-2.5S17 12.1 17 13.5V17M12 11v.5"/></svg>
+                            LinkedIn
+                        </a>
+                        <a class="retro-link link-purple" href="mailto:jordan@example.com">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
+                            Email
+                        </a>
+                    </div>
+                    <button class="pixel-btn" id="restart-btn" type="button">PLAY AGAIN</button>
+                </div>
+            </div>
+
+            <div class="end-buffer"></div>
+        </div>
+    </div>
+
+    <div id="noise-overlay"></div>
+
+    <div id="gui-overlay">
+        <div id="hud">
+            <div class="hud-box"><span class="hud-label">ZONE</span><span class="hud-value" id="hud-zone">INTRO</span></div>
+            <div class="hud-box"><span class="hud-label">DIST</span><span class="hud-value" id="hud-dist">0000m</span></div>
+        </div>
+
+        <div id="toast-container"></div>
+        <div id="scroll-hint" class="pixel-font blink">← → RUN · SPACE JUMP</div>
+
+        <div id="mobile-controls">
+            <div class="touch-btn" id="touch-left" aria-label="run left">◀</div>
+            <div class="touch-btn" id="touch-right" aria-label="run right">▶</div>
+            <div class="touch-btn" id="touch-jump" aria-label="jump">⤒</div>
+        </div>
+
+        <button class="gui-btn" id="mute-btn" aria-label="toggle sound" type="button">🔊</button>
+    </div>
+
+    <div id="start-screen">
+        <div class="start-content">
+            <h1 class="pixel-font font-pink">AKASH RAJA</h1>
+            <div class="game-subtitle pixel-font">A SIDE-SCROLLING PORTFOLIO</div>
+            <div class="controls-info">
+                <div class="info-row"><span class="btn-cap">← / A</span><span class="btn-cap">D / →</span><span class="info-text">Run through the city</span></div>
+                <div class="info-row"><span class="btn-cap long-cap">SPACE</span><span class="info-text">Jump</span></div>
+                <div class="info-row"><span class="btn-cap long-cap">SCROLL</span><span class="info-text">Also works on trackpad / mouse wheel</span></div>
+            </div>
+            <button class="start-btn pixel-font" id="start-btn" type="button">PRESS START</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(() => {
+    'use strict';
+
+    // ---------- DOM refs ----------
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scrollableWorld = document.getElementById('scrollable-world');
+    const startScreen = document.getElementById('start-screen');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const muteBtn = document.getElementById('mute-btn');
+    const hudZone = document.getElementById('hud-zone');
+    const hudDist = document.getElementById('hud-dist');
+    const scrollHint = document.getElementById('scroll-hint');
+    const toastContainer = document.getElementById('toast-container');
+    const mobileControls = document.getElementById('mobile-controls');
+    const touchLeft = document.getElementById('touch-left');
+    const touchRight = document.getElementById('touch-right');
+    const touchJump = document.getElementById('touch-jump');
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const COLORS = { cyan: '#00e5ff', pink: '#ff2e88', purple: '#9b6bff', green: '#3dffa0', amber: '#ffc773' };
+
+    // ---------- Utils ----------
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const TAU = Math.PI * 2;
+    function hexToRgba(hex, a) {
+        const v = hex.replace('#', '');
+        const r = parseInt(v.substring(0, 2), 16), g = parseInt(v.substring(2, 4), 16), b = parseInt(v.substring(4, 6), 16);
+        return `rgba(${r},${g},${b},${a})`;
+    }
+
+    // ---------- State ----------
+    let scale = 4;
+    let worldX = 0, maxScroll = 0;
+    let velX = 0;
+    const RUN_ACCEL = 2200, MAX_SPEED = 420, FRICTION = 2000;
+    let playerY = 0, groundY = 0, velY = 0, grounded = true;
+    const GRAVITY = 2600, JUMP_VELOCITY = -880;
+    let facing = 1;
+    let runPhase = 0;
+    let stepAccum = 0;
+    let started = false;
+    let muted = false;
+    let lastTime = 0;
+    let particles = [];
+
+    const keys = { left: false, right: false, jump: false };
+
+    let sectionMarkers = [];
+    let stars = [], skyline = [], buildings = [], lamps = [], raindrops = [];
+
+    // ---------- Audio (procedural, no external assets) ----------
+    let audioCtx = null, masterGain = null;
+    function initAudio() {
+        if (audioCtx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = muted ? 0 : 0.22;
+        masterGain.connect(audioCtx.destination);
+        startAmbient();
+    }
+    function startAmbient() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.value = 55;
+        gain.gain.value = 0.05;
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.frequency.value = 0.08; lfoGain.gain.value = 8;
+        lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+        osc.connect(gain); gain.connect(masterGain);
+        lfo.start(); osc.start();
+    }
+    function blip(freq, dur, type, vol) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        gain.gain.value = vol;
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(masterGain);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
+    }
+    const sfxFootstep = () => blip(rand(90, 130), 0.05, 'square', 0.06);
+    const sfxJump = () => blip(420, 0.12, 'sawtooth', 0.1);
+    const sfxLand = () => blip(80, 0.15, 'sine', 0.15);
+    const sfxChime = () => [660, 880, 1100].forEach((f, i) => setTimeout(() => blip(f, 0.18, 'triangle', 0.09), i * 70));
+
+    // ---------- Level building ----------
+    function buildLevel() {
+        const levelWidth = scrollableWorld.scrollWidth;
+        maxScroll = Math.max(0, levelWidth - window.innerWidth);
+
+        sectionMarkers = Array.from(document.querySelectorAll('.scroll-section')).map(el => ({
+            name: el.dataset.zone,
+            x: el.offsetLeft,
+            visited: false
+        }));
+
+        stars = Array.from({ length: Math.round(levelWidth / 12) }, () => ({
+            x: rand(0, levelWidth + window.innerWidth),
+            y: rand(0, window.innerHeight * 0.45),
+            r: rand(0.5, 1.8),
+            phase: rand(0, TAU)
+        }));
+
+        skyline = [];
+        for (let x = -200; x < levelWidth + 400;) {
+            const w = rand(50, 100);
+            skyline.push({ x, w, h: rand(70, 190) });
+            x += w + rand(10, 40);
+        }
+
+        buildings = [];
+        for (let x = -200; x < levelWidth + 400;) {
+            const w = rand(80, 150);
+            const h = rand(90, 220);
+            const hue = pick([COLORS.cyan, COLORS.pink, COLORS.purple]);
+            const cols = Math.max(2, Math.round(w / 22));
+            const rows = Math.max(3, Math.round(h / 26));
+            const windows = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (Math.random() < 0.6) windows.push({ r, c, on: true, flicker: Math.random() < 0.12, seed: Math.random() * 10 });
+                }
+            }
+            buildings.push({ x, w, h, hue, cols, rows, windows });
+            x += w + rand(30, 90);
+        }
+
+        lamps = [];
+        sectionMarkers.forEach(m => lamps.push({ x: Math.max(40, m.x - 70), color: COLORS.amber }));
+        for (let x = 160; x < levelWidth; x += rand(220, 320)) lamps.push({ x, color: COLORS.amber });
+
+        raindrops = reduceMotion ? [] : Array.from({ length: 80 }, () => ({
+            x: rand(0, window.innerWidth), y: rand(-window.innerHeight, window.innerHeight),
+            len: rand(8, 18), speed: rand(360, 560)
+        }));
+
+        worldX = clamp(worldX, 0, maxScroll);
+    }
+
+    // ---------- Canvas sizing (renders at a low internal resolution for a crisp pixel-art look, then the CSS `image-rendering: pixelated` upscales it) ----------
+    function resizeCanvas() {
+        const displayW = window.innerWidth, displayH = window.innerHeight;
+        const targetInternalH = 220;
+        scale = displayH / targetInternalH;
+        canvas.width = Math.max(1, Math.round(displayW / scale));
+        canvas.height = Math.max(1, Math.round(displayH / scale));
+        canvas.style.width = displayW + 'px';
+        canvas.style.height = displayH + 'px';
+        ctx.imageSmoothingEnabled = false;
+        groundY = displayH * 0.76;
+        playerY = groundY;
+        buildLevel();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // ---------- Input ----------
+    window.addEventListener('keydown', e => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { keys.jump = true; e.preventDefault(); }
+    });
+    window.addEventListener('keyup', e => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
+    });
+    function bindTouch(el, key) {
+        if (!el) return;
+        const on = e => { e.preventDefault(); keys[key] = true; };
+        const off = e => { e.preventDefault(); keys[key] = false; };
+        el.addEventListener('touchstart', on, { passive: false });
+        el.addEventListener('touchend', off);
+        el.addEventListener('touchcancel', off);
+        el.addEventListener('mousedown', on);
+        el.addEventListener('mouseup', off);
+        el.addEventListener('mouseleave', off);
+    }
+    bindTouch(touchLeft, 'left');
+    bindTouch(touchRight, 'right');
+    bindTouch(touchJump, 'jump');
+    if ('ontouchstart' in window) mobileControls.classList.add('active');
+
+    canvas.addEventListener('wheel', e => {
+        worldX = clamp(worldX + e.deltaY * 0.6, 0, maxScroll);
+    }, { passive: true });
+
+    // ---------- Particles ----------
+    function spawnDust(x, y, n) {
+        for (let i = 0; i < n; i++) particles.push({ x, y, vx: rand(-40, 40), vy: rand(-60, -10), r: rand(1.5, 3), life: 1, type: 'dust' });
+    }
+    function spawnRipple(x, y) {
+        particles.push({ x, y, r: 2, maxR: 34, life: 1, type: 'ripple' });
+    }
+    function updateParticles(dt) {
+        particles.forEach(p => {
+            if (p.type === 'dust') { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 260 * dt; p.life -= dt * 1.6; }
+            else if (p.type === 'ripple') { p.r += (p.maxR - p.r) * dt * 6; p.life -= dt * 1.8; }
+        });
+        particles = particles.filter(p => p.life > 0);
+    }
+
+    // ---------- Helpers shared by physics + render ----------
+    const screenPlayerX = () => window.innerWidth * 0.25;
+    function nearestLights(w) {
+        const out = [];
+        lamps.forEach(l => {
+            const sx = l.x - worldX;
+            if (sx < -140 || sx > w + 140) return;
+            out.push({ sx, color: l.color });
+        });
+        return out;
+    }
+
+    // ---------- Physics update ----------
+    function update(dt) {
+        updateRainAndAmbient(dt);
+        if (!started) return;
+
+        let dir = 0;
+        if (keys.left) dir -= 1;
+        if (keys.right) dir += 1;
+        if (dir !== 0) {
+            velX += dir * RUN_ACCEL * dt;
+            velX = clamp(velX, -MAX_SPEED, MAX_SPEED);
+            facing = dir;
+        } else {
+            const sign = Math.sign(velX);
+            velX -= sign * Math.min(Math.abs(velX), FRICTION * dt);
+        }
+
+        const prevWorldX = worldX;
+        worldX = clamp(worldX + velX * dt, 0, maxScroll);
+        if (worldX === 0 || worldX === maxScroll) velX = 0;
+
+        if (grounded && Math.abs(velX) > 5) runPhase += Math.abs(velX) * dt * 0.012;
+
+        stepAccum += Math.abs(worldX - prevWorldX);
+        if (grounded && stepAccum > 34) {
+            stepAccum = 0;
+            spawnDust(screenPlayerX(), groundY, 3);
+            sfxFootstep();
+        }
+
+        if (keys.jump && grounded) {
+            velY = JUMP_VELOCITY;
+            grounded = false;
+            sfxJump();
+        }
+        velY += GRAVITY * dt;
+        playerY += velY * dt;
+        if (playerY >= groundY) {
+            if (!grounded) {
+                spawnDust(screenPlayerX(), groundY, 10);
+                spawnRipple(screenPlayerX(), groundY + 2);
+                sfxLand();
+            }
+            playerY = groundY; velY = 0; grounded = true;
+        }
+
+        scrollableWorld.style.transform = `translateX(${-worldX}px)`;
+        updateParticles(dt);
+        updateHUD();
+    }
+
+    function updateRainAndAmbient(dt) {
+        raindrops.forEach(d => {
+            d.y += d.speed * dt; d.x -= 40 * dt;
+            if (d.y > window.innerHeight) { d.y = -20; d.x = rand(0, window.innerWidth); }
+        });
+    }
+
+    // ---------- HUD ----------
+    function updateHUD() {
+        let current = sectionMarkers[0];
+        sectionMarkers.forEach(m => { if (worldX + window.innerWidth * 0.3 >= m.x) current = m; });
+        if (current) {
+            hudZone.textContent = current.name;
+            if (!current.visited && worldX > 0) {
+                current.visited = true;
+                showToast(current.name);
+                sfxChime();
+            }
+        }
+        hudDist.textContent = String(Math.floor(worldX / 4)).padStart(4, '0') + 'm';
+    }
+    function showToast(name) {
+        const el = document.createElement('div');
+        el.className = 'toast-xp pixel-font';
+        el.textContent = `+100 XP — ${name} UNLOCKED`;
+        toastContainer.appendChild(el);
+        requestAnimationFrame(() => el.classList.add('show'));
+        setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 2600);
+    }
+
+    // ---------- Rendering ----------
+    function draw() {
+        const w = window.innerWidth, h = window.innerHeight;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(1 / scale, 0, 0, 1 / scale, 0, 0);
+
+        drawSky(w, h);
+        drawStars(w, h);
+        drawSkyline(w, h);
+        drawBuildings(w, h);
+        drawLampGlow(w, h);
+        drawGround(w, h);
+        drawLampPosts(w, h);
+        drawDust();
+        drawPlayer(w, h);
+        drawRipples();
+        drawRain(w, h);
+        drawVignette(w, h);
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    function drawSky(w, h) {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, '#05060c');
+        g.addColorStop(0.55, '#140a24');
+        g.addColorStop(1, '#241238');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+
+        const mx = w * 0.82, my = h * 0.16, mr = 30;
+        const mg = ctx.createRadialGradient(mx, my, 0, mx, my, mr * 3);
+        mg.addColorStop(0, 'rgba(200,220,255,0.5)');
+        mg.addColorStop(1, 'rgba(200,220,255,0)');
+        ctx.fillStyle = mg;
+        ctx.beginPath(); ctx.arc(mx, my, mr * 3, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#e9f1ff';
+        ctx.beginPath(); ctx.arc(mx, my, mr, 0, TAU); ctx.fill();
+    }
+
+    function drawStars(w, h) {
+        const t = performance.now() / 1000;
+        stars.forEach(s => {
+            const sx = s.x - worldX * 0.05;
+            if (sx < -10 || sx > w + 10) return;
+            const tw = reduceMotion ? 1 : (0.5 + 0.5 * Math.sin(t * 2 + s.phase));
+            ctx.globalAlpha = 0.3 + 0.7 * tw;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(sx, s.y, s.r, s.r);
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    function drawSkyline(w, h) {
+        ctx.fillStyle = '#160c26';
+        skyline.forEach(b => {
+            const sx = b.x - worldX * 0.15;
+            if (sx + b.w < 0 || sx > w) return;
+            ctx.fillRect(sx, h * 0.62 - b.h, b.w, b.h + h * 0.4);
+        });
+    }
+
+    function drawBuildings(w, h) {
+        const t = performance.now();
+        buildings.forEach(b => {
+            const sx = b.x - worldX * 0.4;
+            if (sx + b.w < 0 || sx > w) return;
+            const top = h * 0.7 - b.h;
+            ctx.fillStyle = '#1c1030';
+            ctx.fillRect(sx, top, b.w, b.h + h * 0.4);
+
+            ctx.fillStyle = b.hue;
+            ctx.globalAlpha = 0.3;
+            ctx.fillRect(sx, top, 2, b.h + h * 0.4);
+            ctx.globalAlpha = 1;
+
+            const cw = b.w / b.cols, ch = b.h / b.rows;
+            ctx.fillStyle = b.hue;
+            b.windows.forEach(win => {
+                const flick = (win.flicker && !reduceMotion) ? (Math.sin(t / 140 + win.seed) > 0.75 ? 0.15 : 1) : 1;
+                ctx.globalAlpha = 0.85 * flick;
+                ctx.fillRect(sx + win.c * cw + cw * 0.22, top + win.r * ch + ch * 0.22, cw * 0.56, ch * 0.56);
+            });
+            ctx.globalAlpha = 1;
+        });
+    }
+
+    function drawLampGlow(w, h) {
+        const lights = nearestLights(w);
+        const groundTop = h * 0.7;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        lights.forEach(l => {
+            const g = ctx.createRadialGradient(l.sx, groundTop, 0, l.sx, groundTop, 140);
+            g.addColorStop(0, hexToRgba(l.color, 0.35));
+            g.addColorStop(1, hexToRgba(l.color, 0));
+            ctx.fillStyle = g;
+            ctx.fillRect(l.sx - 140, groundTop - 140, 280, 280);
+        });
+        ctx.restore();
+    }
+
+    function drawGround(w, h) {
+        const groundTop = h * 0.7;
+        const g = ctx.createLinearGradient(0, groundTop, 0, h);
+        g.addColorStop(0, '#221735');
+        g.addColorStop(1, '#0a0712');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, groundTop, w, h - groundTop);
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 2;
+        const offset = (-worldX) % 40;
+        for (let i = 0; i < 6; i++) {
+            const y = groundTop + 14 + i * 14;
+            ctx.beginPath();
+            for (let x = offset - 40; x < w; x += 40) { ctx.moveTo(x, y); ctx.lineTo(x + 20, y); }
+            ctx.stroke();
+        }
+    }
+
+    function drawLampPosts(w, h) {
+        const groundTop = h * 0.7;
+        lamps.forEach(l => {
+            const sx = l.x - worldX;
+            if (sx < -20 || sx > w + 20) return;
+            ctx.fillStyle = '#0d0a16';
+            ctx.fillRect(sx - 2, groundTop - 70, 4, 70);
+            ctx.fillStyle = l.color;
+            ctx.globalAlpha = 0.9;
+            ctx.beginPath(); ctx.arc(sx, groundTop - 72, 5, 0, TAU); ctx.fill();
+            ctx.globalAlpha = 1;
+        });
+    }
+
+    function drawDust() {
+        particles.forEach(p => {
+            if (p.type !== 'dust') return;
+            ctx.fillStyle = `rgba(220,210,255,${Math.max(0, p.life) * 0.6})`;
+            ctx.fillRect(p.x, p.y - ((1 - p.life) * 20), p.r, p.r);
+        });
+    }
+
+    function drawRipples() {
+        particles.forEach(p => {
+            if (p.type !== 'ripple') return;
+            ctx.strokeStyle = `rgba(0,229,255,${Math.max(0, p.life) * 0.5})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * 0.35, 0, 0, TAU); ctx.stroke();
+        });
+    }
+
+    function drawRain(w, h) {
+        if (reduceMotion) return;
+        ctx.strokeStyle = 'rgba(180,200,255,0.18)';
+        ctx.lineWidth = 1;
+        raindrops.forEach(d => {
+            ctx.beginPath();
+            ctx.moveTo(d.x, d.y);
+            ctx.lineTo(d.x - 4, d.y + d.len);
+            ctx.stroke();
+        });
+    }
+
+    function drawVignette(w, h) {
+        const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, h * 0.75);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(1, 'rgba(0,0,0,0.45)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawPlayer(w, h) {
+        const groundTop = h * 0.7;
+        const px = screenPlayerX();
+        const py = groundTop - (groundY - playerY);
+        const bob = (grounded && Math.abs(velX) > 20 && !reduceMotion) ? Math.sin(runPhase * TAU) * 3 : 0;
+        const squash = !grounded ? clamp(1 - velY / 1400, 0.85, 1.15) : 1;
+
+        let rim = COLORS.cyan, best = 99999;
+        nearestLights(w).forEach(l => { const d = Math.abs(l.sx - px); if (d < best) { best = d; rim = l.color; } });
+        const rimStrength = clamp(1 - best / 220, 0.15, 0.9);
+
+        const shadowScale = clamp(1 - (groundY - playerY) / 160, 0.25, 1);
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.beginPath();
+        ctx.ellipse(px, groundTop + 2, 16 * shadowScale, 5 * shadowScale, 0, 0, TAU);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(px, py - bob);
+        ctx.scale(facing < 0 ? -1 : 1, squash);
+
+        const legSwing = grounded ? Math.sin(runPhase * TAU) * 10 : 4;
+        ctx.fillStyle = '#141726';
+        ctx.fillRect(-7, 6 + legSwing * 0.15, 5, 16 - legSwing * 0.2);
+        ctx.fillRect(2, 6 - legSwing * 0.15, 5, 16 + legSwing * 0.2);
+
+        ctx.fillStyle = '#1c2036';
+        ctx.fillRect(-9, -20, 18, 28);
+
+        ctx.fillStyle = rim;
+        ctx.globalAlpha = 0.5 + rimStrength * 0.5;
+        ctx.fillRect(7, -20, 2, 28);
+        ctx.globalAlpha = 1;
+
+        const armSwing = grounded ? Math.sin(runPhase * TAU + Math.PI) * 8 : -6;
+        ctx.fillStyle = '#141726';
+        ctx.fillRect(-12, -16 + armSwing * 0.2, 4, 14);
+        ctx.fillRect(9, -16 - armSwing * 0.2, 4, 14);
+
+        ctx.fillStyle = '#f0d9c0';
+        ctx.fillRect(-7, -32, 14, 13);
+
+        ctx.fillStyle = rim;
+        ctx.globalAlpha = 0.8;
+        ctx.fillRect(-6, -28, 12, 4);
+        ctx.globalAlpha = 1;
+
+        ctx.strokeStyle = hexToRgba(rim, rimStrength);
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(-9, -32, 18, 44);
+
+        ctx.restore();
+    }
+
+    // ---------- Main loop ----------
+    function loop(ts) {
+        if (!lastTime) lastTime = ts;
+        const dt = Math.min((ts - lastTime) / 1000, 0.033);
+        lastTime = ts;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    // ---------- Start / restart / mute ----------
+    function animateTo(target) {
+        const start = worldX, dur = 900, t0 = performance.now();
+        function step(t) {
+            const p = clamp((t - t0) / dur, 0, 1);
+            const ease = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+            worldX = lerp(start, target, ease);
+            scrollableWorld.style.transform = `translateX(${-worldX}px)`;
+            if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    startBtn.addEventListener('click', () => {
+        started = true;
+        startScreen.classList.add('hidden');
+        initAudio();
+        if (!reduceMotion) {
+            setTimeout(() => scrollHint.classList.add('show'), 400);
+            setTimeout(() => scrollHint.classList.remove('show'), 4800);
+        }
+    });
+
+    restartBtn.addEventListener('click', () => {
+        animateTo(0);
+        sectionMarkers.forEach(m => m.visited = false);
+    });
+
+    muteBtn.addEventListener('click', () => {
+        muted = !muted;
+        muteBtn.textContent = muted ? '🔇' : '🔊';
+        if (masterGain) masterGain.gain.value = muted ? 0 : 0.22;
+    });
+
+    window.addEventListener('load', () => {
+        resizeCanvas();
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(buildLevel);
+        requestAnimationFrame(loop);
+    });
+})();
+</script>
+</body>
+</html>
