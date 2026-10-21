@@ -65,11 +65,13 @@
     position: fixed;
     top: 0; left: 0;
     height: 2px;
-    width: 0%;
+    width: 100%;
     z-index: 60;
     background: linear-gradient(90deg, var(--gold-low), var(--gold) 60%, var(--gold-hi));
     box-shadow: 0 0 10px rgba(216,178,95,.5);
-    transition: width .1s linear;
+    transform: scaleX(0);
+    transform-origin: left center;
+    will-change: transform;
   }
 
   /* ---------- NAV ---------- */
@@ -83,11 +85,13 @@
     padding: 22px 6vw;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .15s linear, background .3s ease, border-color .3s ease;
+    visibility: hidden;
+    transition: opacity .2s ease, background .3s ease, border-color .3s ease;
     background: rgba(7,7,10,0);
     border-bottom: 1px solid transparent;
     backdrop-filter: blur(0px);
   }
+  .site-nav.is-visible{ visibility: visible; }
   .site-nav.scrolled{
     background: rgba(7,7,10,.72);
     border-color: var(--card-edge);
@@ -175,10 +179,11 @@
     gap: 30px;
     opacity: 0;
     pointer-events: none;
+    visibility: hidden;
     transform: translateY(-8px);
-    transition: opacity .3s var(--ease), transform .3s var(--ease);
+    transition: opacity .3s var(--ease), transform .3s var(--ease), visibility .3s;
   }
-  .mobile-nav.open{ opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .mobile-nav.open{ opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
   .mobile-nav a{
     font-family: var(--display);
     font-size: 22px;
@@ -286,8 +291,8 @@
 
   @media (prefers-reduced-motion: reduce){
     html{ scroll-behavior: auto; }
-    .intro-wrapper{ height: auto; }
-    .intro-pin{ position: relative; height: 100vh; height: 100dvh; }
+    .intro-wrapper{ height: 0; }
+    .intro-pin{ display: none; }
     .scroll-cue::after{ animation: none; }
   }
 
@@ -427,14 +432,14 @@
     .section{ padding: 66px 6vw 76px; }
   }
 
-  .reveal{
+  .motion-ready .reveal{
     opacity: 0;
     transform: translateY(26px);
     transition: opacity .8s cubic-bezier(.16,.8,.24,1), transform .8s cubic-bezier(.16,.8,.24,1);
   }
-  .reveal.in-view{ opacity: 1; transform: translateY(0); }
+  .motion-ready .reveal.in-view{ opacity: 1; transform: translateY(0); }
   @media (prefers-reduced-motion: reduce){
-    .reveal{ opacity: 1 !important; transform: none !important; transition: none !important; }
+    .motion-ready .reveal{ opacity: 1 !important; transform: none !important; transition: none !important; }
   }
 
   /* ---------- ABOUT ---------- */
@@ -756,12 +761,12 @@
       <li><a href="#contact">Contact</a></li>
     </ul>
     <a class="nav-cta" href="#contact">Let's talk</a>
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+    <button class="nav-toggle" id="navToggle" aria-label="Open navigation menu" aria-controls="mobileNav" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
   </header>
 
-  <nav class="mobile-nav" id="mobileNav">
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation" aria-hidden="true">
     <a href="#about">About</a>
     <a href="#skills">Skills</a>
     <a href="#experience">Experience</a>
@@ -941,8 +946,8 @@
             <span class="label">Phone</span><span class="value">+91 97863 38860</span>
           </a>
           <span class="contact-row"><span class="label">Location</span><span class="value">Tiruttani, Tamil Nadu</span></span>
-          <a class="contact-row" href="https://www.linkedin.com/in/akashraja-82426529b" target="_blank" rel="noopener">
-            <span class="label">LinkedIn</span><span class="value">akashraja-82426529b</span>
+          <a class="contact-row" href="https://www.linkedin.com/in/akashrajam/" target="_blank" rel="noopener">
+            <span class="label">LinkedIn</span><span class="value">akashrajam</span>
           </a>
           <a class="contact-row" href="https://github.com/akashraja-s" target="_blank" rel="noopener">
             <span class="label">GitHub</span><span class="value">akashraja-s</span>
@@ -988,6 +993,7 @@
   var textFontSize = 60, textMeasuredWidth = 0;
   var particles = [];
   var progress = 0;
+  var frameId = 0;
 
   /* ---------- helpers ---------- */
   function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
@@ -1233,8 +1239,8 @@
     ctx.save();
     ctx.globalAlpha = alpha;
 
-    var shakeX = chargeAmt > 0 ? (Math.random()*2-1) * chargeAmt * 3 : 0;
-    var shakeY = chargeAmt > 0 ? (Math.random()*2-1) * chargeAmt * 3 : 0;
+    var shakeX = chargeAmt > 0 ? Math.sin(time * 0.071) * chargeAmt * 2.2 : 0;
+    var shakeY = chargeAmt > 0 ? Math.cos(time * 0.083) * chargeAmt * 2.2 : 0;
     ctx.translate(shakeX, shakeY);
 
     var glowR = Math.max(cardW,cardH) * (1.1 + chargeAmt*0.5);
@@ -1497,8 +1503,10 @@
     var navA = smoothstep(0.86, 0.98, progress);
     nav.style.opacity = navA.toFixed(3);
     nav.style.pointerEvents = navA > 0.5 ? 'auto' : 'none';
+    nav.classList.toggle('is-visible', navA > 0.5);
     canvas.style.opacity = (1 - smoothstep(0.90, 1.0, progress)).toFixed(3);
     scrollCue.style.opacity = (1 - smoothstep(0.0, 0.06, progress)).toFixed(3);
+    updateAnimation();
   }
 
   function resize(){
@@ -1528,8 +1536,18 @@
   }
 
   function loop(time){
+    frameId = 0;
+    if (reducedMotion || document.hidden || progress >= 1) return;
     draw(progress, time);
-    requestAnimationFrame(loop);
+    frameId = requestAnimationFrame(loop);
+  }
+
+  function updateAnimation(){
+    if (reducedMotion || document.hidden || progress >= 1){
+      if (frameId){ cancelAnimationFrame(frameId); frameId = 0; }
+      return;
+    }
+    if (!frameId) frameId = requestAnimationFrame(loop);
   }
 
   skipBtn.addEventListener('click', function(){
@@ -1545,6 +1563,7 @@
     if (reducedMotion){
       nav.style.opacity = '1';
       nav.style.pointerEvents = 'auto';
+      nav.classList.add('is-visible');
       canvas.style.opacity = '0';
       scrollCue.style.display = 'none';
       skipBtn.style.display = 'none';
@@ -1553,8 +1572,8 @@
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('visibilitychange', updateAnimation);
     onScroll();
-    requestAnimationFrame(loop);
   }
 
   try {
@@ -1593,6 +1612,8 @@
     });
   }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
 
+  document.documentElement.classList.add('motion-ready');
+
   reveals.forEach(function(el){ io.observe(el); });
 })();
 </script>
@@ -1605,20 +1626,33 @@
   var nav = document.getElementById('siteNav');
   var progressBar = document.getElementById('scrollProgress');
 
-  function closeMobile(){
-    toggle.classList.remove('open');
-    mobileNav.classList.remove('open');
-    toggle.setAttribute('aria-expanded', 'false');
+  function setMobileOpen(open){
+    toggle.classList.toggle('open', open);
+    mobileNav.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+    mobileNav.setAttribute('aria-hidden', String(!open));
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  function closeMobile(returnFocus){
+    setMobileOpen(false);
+    if (returnFocus) toggle.focus();
   }
 
   toggle.addEventListener('click', function(){
     var willOpen = !mobileNav.classList.contains('open');
-    toggle.classList.toggle('open', willOpen);
-    mobileNav.classList.toggle('open', willOpen);
-    toggle.setAttribute('aria-expanded', String(willOpen));
+    setMobileOpen(willOpen);
+    if (willOpen) mobileNav.querySelector('a').focus();
+  });
+  document.addEventListener('keydown', function(event){
+    if (event.key === 'Escape' && mobileNav.classList.contains('open')) closeMobile(true);
+  });
+  window.addEventListener('resize', function(){
+    if (window.innerWidth > 760 && mobileNav.classList.contains('open')) closeMobile(false);
   });
   mobileNav.querySelectorAll('a').forEach(function(a){
-    a.addEventListener('click', closeMobile);
+    a.addEventListener('click', function(){ closeMobile(false); });
   });
 
   function onPageScroll(){
@@ -1626,7 +1660,7 @@
     var scrollTop = window.scrollY || doc.scrollTop;
     var max = doc.scrollHeight - doc.clientHeight;
     var pct = max > 0 ? (scrollTop / max) * 100 : 0;
-    progressBar.style.width = pct.toFixed(2) + '%';
+    progressBar.style.transform = 'scaleX(' + (pct / 100).toFixed(4) + ')';
     nav.classList.toggle('scrolled', scrollTop > 40);
   }
   window.addEventListener('scroll', onPageScroll, { passive: true });
